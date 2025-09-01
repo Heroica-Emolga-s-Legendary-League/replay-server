@@ -12,30 +12,30 @@ block content
 	    .replay-controls
 	    .replay-controls-2
 	    h1
-			| #{replay.format}
-			br
-			a(href=`https://pokemonshowdown.com/users/${replay.players[0]}`, target="_blank").subtle #{replay.players[0]}
-			| vs
-			a(href=`http://pokemonshowdown.com/users/${replay.players[1]}`, target="_blank").subtle #{replay.players[1]}
-		script(type="text/plain").battle-log-data
-			| #{replay.log.replace(/\//g, "\\/")}
-	script(defer, src=`https://heroicemolga.serveminecraft.net/js/replay-embed.js`)
-	script(defer, nomodule, src=`https://heroicemolga.serveminecraft.net/js/lib/ps-polyfill.js`)
-	script(defer, src=`https://heroicemolga.serveminecraft.net/js/lib/preact.min.js`)
-	script(defer, src=`https://heroicemolga.serveminecraft.net/config/config.js`)
-	script(defer, src=`https://heroicemolga.serveminecraft.net/js/lib/jquery-1.11.0.min.js`)
-	script(defer, src=`https://heroicemolga.serveminecraft.net/js/lib/html-sanitizer-minified.js`)
-	script(defer, src=`https://heroicemolga.serveminecraft.net/js/battle-sound.js`)
-	script(defer, src=`https://heroicemolga.serveminecraft.net/js/battledata.js`)
-	script(defer, src=`https://heroicemolga.serveminecraft.net/js/pokedex-mini.js`)
-	script(defer, src=`https://heroicemolga.serveminecraft.net/js/pokedex-mini-bw.js`)
-	script(defer, src=`https://heroicemolga.serveminecraft.net/graphics.js`)
-	script(defer, src=`https://heroicemolga.serveminecraft.net/pokedex.js`)
-	script(defer, src=`https://heroicemolga.serveminecraft.net/moves.js`)
-	script(defer, src=`https://heroicemolga.serveminecraft.net/abilities.js`)
-	script(defer, src=`https://heroicemolga.serveminecraft.net/items.js`)
-	script(defer, src=`https://heroicemolga.serveminecraft.net/teambuilder-tables.js`)
-	script(defer, src=`https://heroicemolga.serveminecraft.net/battle-tooltips.js`)
-	script(defer, src=`https://heroicemolga.serveminecraft.net/battle.js`)
-	script(defer, src=`https://play.pokemonshowdown.com/js/replay-embed.js?version${Math.floor(Date.now()/1000/60/60/24)}`)
-	div
+            | #{replay.format}
+            br
+            a(href=`https://pokemonshowdown.com/users/${replay.players[0]}`, target="_blank").subtle #{replay.players[0]}
+            | vs
+            a(href=`http://pokemonshowdown.com/users/${replay.players[1]}`, target="_blank").subtle #{replay.players[1]}
+        script(type="text/plain").battle-log-data
+            | #{replay.log.replace(/\//g, "\\/")}
+    script(defer, src=`https://heroicemolga.serveminecraft.net/js/replay-embed.js`)
+    script(defer, nomodule, src=`https://heroicemolga.serveminecraft.net/js/lib/ps-polyfill.js`)
+    script(defer, src=`https://heroicemolga.serveminecraft.net/js/lib/preact.min.js`)
+    script(defer, src=`https://heroicemolga.serveminecraft.net/config/config.js`)
+    script(defer, src=`https://heroicemolga.serveminecraft.net/js/lib/jquery-1.11.0.min.js`)
+    script(defer, src=`https://heroicemolga.serveminecraft.net/js/lib/html-sanitizer-minified.js`)
+    script(defer, src=`https://heroicemolga.serveminecraft.net/js/battle-sound.js`)
+    script(defer, src=`https://heroicemolga.serveminecraft.net/js/battledata.js`)
+    script(defer, src=`https://heroicemolga.serveminecraft.net/js/pokedex-mini.js`)
+    script(defer, src=`https://heroicemolga.serveminecraft.net/js/pokedex-mini-bw.js`)
+    script(defer, src=`https://heroicemolga.serveminecraft.net/graphics.js`)
+    script(defer, src=`https://heroicemolga.serveminecraft.net/pokedex.js`)
+    script(defer, src=`https://heroicemolga.serveminecraft.net/moves.js`)
+    script(defer, src=`https://heroicemolga.serveminecraft.net/abilities.js`)
+    script(defer, src=`https://heroicemolga.serveminecraft.net/items.js`)
+    script(defer, src=`https://heroicemolga.serveminecraft.net/teambuilder-tables.js`)
+    script(defer, src=`https://heroicemolga.serveminecraft.net/battle-tooltips.js`)
+    script(defer, src=`https://heroicemolga.serveminecraft.net/battle.js`)
+    script(defer, src=`https://play.pokemonshowdown.com/js/replay-embed.js?version${Math.floor(Date.now()/1000/60/60/24)}`)
+    div
