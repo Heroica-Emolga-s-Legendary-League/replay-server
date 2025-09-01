@@ -7,7 +7,7 @@ export class ReplayService {
     constructor() {}
 
     async createReplay(newReplay: NewReplayDto) {
-        await fs.writeFileSync('./data/replays/' + newReplay.id + '.json', JSON.stringify(newReplay));
+        await fs.writeFileSync('./data/replays/' + newReplay.id + '.json', JSON.stringify(newReplay), { flag: 'w'});
     }
 
     async getReplay(id: string): Promise<NewReplayDto | null> {
