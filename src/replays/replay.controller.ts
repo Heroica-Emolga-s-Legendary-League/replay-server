@@ -14,12 +14,14 @@ export class ReplayController {
     @Get(':id')
     @Render("replay")
     async getReplay(@Param('id') id: string) {
-        return await this.replayService.getReplay(id);
+        const replay = await this.replayService.getReplay(id);
+        return { replay };
     }
 
     @Get()
     @Render("replays")
     async getReplays() {
-        return await this.replayService.getReplays();
+        const replays = await this.replayService.getReplays();
+        return { replays };
     }
 }
