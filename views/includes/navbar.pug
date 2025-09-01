@@ -1,0 +1,11 @@
+nav.navbar.navbar-expand-lg.bg-dark.border-bottom.border-body(data-bs-theme="dark")
+	.container-fluid
+		block nav-title
+			a.navbar-brand(href=`/`) HELL's Replay Server
+		button.navbar-toggler(type='button' data-bs-toggle='collapse' data-bs-target='#navbarNav' aria-controls='navbarNav' aria-expanded='false' aria-label='Toggle navigation')
+			span.navbar-toggler-icon
+		#navbarNav.collapse.navbar-collapse
+			ul.navbar-nav
+				block nav
+					li.nav-item
+						a.nav-link(href='https://heroicemolga.serveminecraft.net') Pokemon Showdown Server

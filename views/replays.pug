@@ -1,0 +1,14 @@
+extends base/base.pug
+block title
+    | HELL's Replay Server
+block nav-title
+	a.navbar-brand(href=`/`) HELL's Replay Server
+block content
+	.card.text-center
+		.card-header.bg-dark.text-light
+			h1= 'Replays'
+	br
+	h2.text-center.bg-dark.text-light Replays
+	each replay in replays
+		include mixins/replay_card.pug
+		+replay_card()(replay=replay, server=server)
