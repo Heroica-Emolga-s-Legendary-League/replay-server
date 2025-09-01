@@ -1,17 +1,17 @@
 extends base/base.pug
 block title
-	| #{replay.format} replay: #{replay.players[0]} vs #{replay.players[1]}
+    | #{replay.format} replay: #{replay.players[0]} vs #{replay.players[1]}
 block nav-title
-	a.navbar-brand(href=`/`) HELL's Replay Server
+    a.navbar-brand(href=`/`) HELL's Replay Server
 block content
 	a(href=`/replays`)
-		button.btn.btn-outline-light Back to the Replay List
-	.wrapper.replay-wrapper
-		.battle
-		.battle-log
-		.replay-controls
-		.replay-controls-2
-		h1
+	    button.btn.btn-outline-light Back to the Replay List
+    .wrapper.replay-wrapper
+	    .battle
+	    .battle-log
+	    .replay-controls
+	    .replay-controls-2
+	    h1
 			| #{replay.format}
 			br
 			a(href=`https://pokemonshowdown.com/users/${replay.players[0]}`, target="_blank").subtle #{replay.players[0]}
