@@ -4,14 +4,14 @@ block title
 block nav-title
     a.navbar-brand(href=`/`) HELL's Replay Server
 block content
-	a(href=`/replays`)
-	    button.btn.btn-outline-light Back to the Replay List
+    a(href=`/replays`)
+        button.btn.btn-outline-light Back to the Replay List
     .wrapper.replay-wrapper
-	    .battle
-	    .battle-log
-	    .replay-controls
-	    .replay-controls-2
-	    h1
+        .battle
+        .battle-log
+        .replay-controls
+        .replay-controls-2
+        h1
             | #{replay.format}
             br
             a(href=`https://pokemonshowdown.com/users/${replay.players[0]}`, target="_blank").subtle #{replay.players[0]}
