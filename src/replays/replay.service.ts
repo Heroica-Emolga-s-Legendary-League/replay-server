@@ -1,18 +1,19 @@
 import { Injectable } from "@nestjs/common";
 import { NewReplayDto } from "./dto/new-replay.dto";
 import fs from 'fs';
+import path from "path";
 
 @Injectable()
 export class ReplayService {
     constructor() {}
 
     async createReplay(newReplay: NewReplayDto) {
-        await fs.writeFileSync('./data/replays/' + newReplay.id + '.json', JSON.stringify(newReplay), { flag: 'w'});
+        await fs.writeFileSync(path.join(__dirname, '..', '..', 'data', 'replays', newReplay.id + '.json'), JSON.stringify(newReplay), { flag: 'w'});
     }
 
     async getReplay(id: string): Promise<NewReplayDto | null> {
         try {
-            const data = await fs.promises.readFile('./data/replays/' + id + '.json', 'utf-8');
+            const data = await fs.promises.readFile(path.join(__dirname, '..', '..', 'data', 'replays', id + '.json'), 'utf-8');
             return JSON.parse(data);
         } catch (error) {
             return null;
