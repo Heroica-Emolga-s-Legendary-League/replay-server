@@ -19,7 +19,7 @@ block content
             a(href=`http://pokemonshowdown.com/users/${replay.players[1]}`, target="_blank").subtle #{replay.players[1]}
         script(type="text/plain").battle-log-data
             | #{replay.log.replace(/\//g, "\\/")}
-    script(defer, src=`https://heroicemolga.serveminecraft.net/js/replay-embed.js`)
+    script(defer, src=`https://heroicemolga.serveminecraft.net/js/replay-embed.template.js`)
     script(defer, nomodule, src=`https://heroicemolga.serveminecraft.net/js/lib/ps-polyfill.js`)
     script(defer, src=`https://heroicemolga.serveminecraft.net/js/lib/preact.min.js`)
     script(defer, src=`https://heroicemolga.serveminecraft.net/config/config.js`)
