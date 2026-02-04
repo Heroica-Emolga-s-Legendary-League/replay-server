@@ -20,6 +20,16 @@ export class ReplayService {
         }
     }
 
+    async getReplayLog(id: string): Promise<string | null> {
+        try {
+            const data = await fs.promises.readFile(path.join(__dirname, '..', '..', 'data', 'replays', id + '.json'), 'utf-8');
+            const json = JSON.parse(data);
+            return json.log || "REPLAY NOT FOUND";
+        } catch (error) {
+            return null;
+        }
+    }
+
     async getReplays() {
         const files = await fs.promises.readdir('./data/replays');
         const replays: NewReplayDto[] = [];
