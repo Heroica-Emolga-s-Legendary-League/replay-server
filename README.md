@@ -56,6 +56,7 @@ Trigger deployment from Coolify. Health check is built into the image and checks
 
 ## Notes
 
+- Replay writes are create-only; posting an existing replay id now returns a conflict instead of overwriting the stored file.
 - Views are served from `/app/views` in production image.
 - Existing seeded data in `data/replays` is copied into the image at build time.
 - Container ensures `/app/data/replays` exists and is writable at startup image build time.
