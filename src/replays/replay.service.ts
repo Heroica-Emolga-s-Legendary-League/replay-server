@@ -22,8 +22,20 @@ export class ReplayService {
         return candidate;
       }
 
+      const existing = await this.replayStore.findById(candidateId);
+      if (existing && this.samePlayers(existing.players, candidate.players)) {
+        return existing;
+      }
+
       candidateId = this.nextId(originalId, attempt + 1);
     }
+  }
+
+  private samePlayers(existing: string[], requested: string[]): boolean {
+    return (
+      existing.length === requested.length &&
+      existing.every((player, index) => player === requested[index])
+    );
   }
 
   private nextId(originalId: string, offset: number): string {

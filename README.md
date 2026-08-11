@@ -33,11 +33,13 @@ The migration is safe to run repeatedly:
 ## Replay ID collisions
 
 `POST /replays` first attempts the submitted `id`. If that ID already exists, the
-server increments its numeric suffix until an insert succeeds (for example,
-`battle-12`, `battle-13`, `battle-14`). MongoDB's unique `_id` constraint makes
-this safe even when uploads arrive concurrently. The response contains the final
-saved `id` and `path_name`; callers must use that returned ID when constructing
-the replay URL.
+server compares the ordered `players` array. Matching players identify the same
+replay, so the existing ID is returned without another write. Different players
+cause the server to increment the numeric suffix until it finds either the same
+players or an unused ID (for example, `battle-12`, `battle-13`, `battle-14`).
+MongoDB's unique `_id` constraint makes this safe even when uploads arrive
+concurrently. The response contains the final saved `id` and `path_name`; callers
+must use that returned ID when constructing the replay URL.
 
 ## Production Build
 
