@@ -10,78 +10,86 @@ const replay: NewReplayDto = {
   path_name: 'gen9-test-1',
 };
 
+function mockStore(overrides: Partial<ReplayStore> = {}): ReplayStore {
+  return {
+    findByFingerprint: jest.fn().mockResolvedValue(null),
+    tryInsert: jest.fn().mockResolvedValue('created'),
+    ...overrides,
+  } as unknown as ReplayStore;
+}
+
 describe('ReplayService', () => {
-  it('saves the requested ID when it is available', async () => {
-    const store = { insert: jest.fn().mockResolvedValue(true) } as unknown as ReplayStore;
+  it('saves new replay content under the requested ID', async () => {
+    const store = mockStore();
     const service = new ReplayService(store);
 
-    await expect(service.createReplay(replay)).resolves.toEqual(replay);
-    expect(store.insert).toHaveBeenCalledWith(replay);
+    await expect(service.createReplay(replay)).resolves.toEqual({
+      replay,
+      created: true,
+    });
+    expect(store.tryInsert).toHaveBeenCalledWith(replay, expect.stringMatching(/^[a-f0-9]{64}$/));
   });
 
-  it('increments a numeric suffix until it finds an unused ID', async () => {
-    const insert = jest
-      .fn()
-      .mockResolvedValueOnce(false)
-      .mockResolvedValueOnce(false)
-      .mockResolvedValueOnce(true);
-    const findById = jest
-      .fn()
-      .mockResolvedValueOnce({ ...replay, players: ['Carol', 'Dave'] })
-      .mockResolvedValueOnce({ ...replay, id: 'gen9-test-2', players: ['Eve', 'Frank'] });
-    const service = new ReplayService({ insert, findById } as unknown as ReplayStore);
-
-    await expect(service.createReplay(replay)).resolves.toMatchObject({
-      id: 'gen9-test-3',
-      path_name: 'gen9-test-3',
+  it('returns an existing replay when its content fingerprint matches', async () => {
+    const existing = { ...replay, id: 'canonical-7', path_name: 'canonical-7' };
+    const store = mockStore({
+      findByFingerprint: jest.fn().mockResolvedValue(existing),
     });
-    expect(insert.mock.calls.map(([value]) => value.id)).toEqual([
+    const service = new ReplayService(store);
+
+    await expect(service.createReplay(replay)).resolves.toEqual({
+      replay: existing,
+      created: false,
+    });
+    expect(store.tryInsert).not.toHaveBeenCalled();
+  });
+
+  it('uses a new ID when different replay content occupies the requested ID', async () => {
+    const tryInsert = jest
+      .fn()
+      .mockResolvedValueOnce('id-conflict')
+      .mockResolvedValueOnce('created');
+    const service = new ReplayService(mockStore({ tryInsert }));
+
+    await expect(service.createReplay(replay)).resolves.toEqual({
+      replay: { ...replay, id: 'gen9-test-2', path_name: 'gen9-test-2' },
+      created: true,
+    });
+    expect(tryInsert.mock.calls.map(([value]) => value.id)).toEqual([
       'gen9-test-1',
       'gen9-test-2',
-      'gen9-test-3',
     ]);
   });
 
-  it('returns the existing ID without inserting another replay when players match', async () => {
-    const existing = { ...replay, log: 'original saved log' };
-    const insert = jest.fn().mockResolvedValue(false);
-    const findById = jest.fn().mockResolvedValue(existing);
-    const service = new ReplayService({ insert, findById } as unknown as ReplayStore);
+  it('resolves concurrent identical uploads to the first inserted replay', async () => {
+    const existing = { ...replay, id: 'gen9-test-9', path_name: 'gen9-test-9' };
+    const findByFingerprint = jest
+      .fn()
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(existing);
+    const service = new ReplayService(
+      mockStore({
+        findByFingerprint,
+        tryInsert: jest.fn().mockResolvedValue('fingerprint-conflict'),
+      }),
+    );
 
-    await expect(
-      service.createReplay({ ...replay, log: 'new duplicate upload' }),
-    ).resolves.toEqual(existing);
-    expect(insert).toHaveBeenCalledTimes(1);
-    expect(findById).toHaveBeenCalledWith(replay.id);
+    await expect(service.createReplay(replay)).resolves.toEqual({
+      replay: existing,
+      created: false,
+    });
   });
 
-  it('treats player order as part of the replay identity', async () => {
-    const insert = jest.fn().mockResolvedValueOnce(false).mockResolvedValueOnce(true);
-    const findById = jest.fn().mockResolvedValue({
-      ...replay,
-      players: ['Bob', 'Alice'],
-    });
-    const service = new ReplayService({ insert, findById } as unknown as ReplayStore);
+  it('does not consider the same players with a different log a duplicate', async () => {
+    const store = mockStore();
+    const service = new ReplayService(store);
 
-    await expect(service.createReplay(replay)).resolves.toMatchObject({
-      id: 'gen9-test-2',
-    });
-    expect(insert).toHaveBeenCalledTimes(2);
-  });
+    await service.createReplay(replay);
+    await service.createReplay({ ...replay, log: 'a different battle log' });
 
-  it('appends a numeric suffix when the requested ID has none', async () => {
-    const insert = jest.fn().mockResolvedValueOnce(false).mockResolvedValueOnce(true);
-    const findById = jest.fn().mockResolvedValue({
-      ...replay,
-      id: 'custom',
-      players: ['Carol', 'Dave'],
-    });
-    const service = new ReplayService({ insert, findById } as unknown as ReplayStore);
-    const withoutSuffix = { ...replay, id: 'custom', path_name: 'custom' };
-
-    await expect(service.createReplay(withoutSuffix)).resolves.toMatchObject({
-      id: 'custom-1',
-      path_name: 'custom-1',
-    });
+    const fingerprints = (store.tryInsert as jest.Mock).mock.calls.map(
+      ([, fingerprint]) => fingerprint,
+    );
+    expect(fingerprints[0]).not.toEqual(fingerprints[1]);
   });
 });

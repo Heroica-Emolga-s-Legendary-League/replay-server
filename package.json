@@ -18,7 +18,8 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "migrate:replays": "node dist/migrate-replays"
+    "migrate:replays": "node dist/migrate-replays",
+    "backfill:replay-fingerprints": "node dist/backfill-replay-fingerprints"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

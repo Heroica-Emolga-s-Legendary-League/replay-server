@@ -32,14 +32,20 @@ The migration is safe to run repeatedly:
 
 ## Replay ID collisions
 
-`POST /replays` first attempts the submitted `id`. If that ID already exists, the
-server compares the ordered `players` array. Matching players identify the same
-replay, so the existing ID is returned without another write. Different players
-cause the server to increment the numeric suffix until it finds either the same
-players or an unused ID (for example, `battle-12`, `battle-13`, `battle-14`).
-MongoDB's unique `_id` constraint makes this safe even when uploads arrive
-concurrently. The response contains the final saved `id` and `path_name`; callers
-must use that returned ID when constructing the replay URL.
+`POST /replays` calculates a SHA-256 fingerprint from the replay's format,
+ordered players, battle log, and input log. If that exact content already exists,
+the canonical existing ID is returned without a write. If different content uses
+the requested ID, the server increments its numeric suffix until an unused ID is
+found (for example, `battle-12`, `battle-13`, `battle-14`). Unique MongoDB indexes
+on both `_id` and the fingerprint make concurrent uploads safe. The response
+contains the final `id`, `path_name`, and a `created` boolean; callers must use the
+returned ID when constructing the replay URL.
+
+After deploying this version against an existing database, run
+`npm run backfill:replay-fingerprints` once. The command is idempotent and only
+adds fingerprint metadata. Historical documents with duplicate replay content
+are reported and preserved; one existing ID becomes the canonical fingerprint
+owner.
 
 ## Production Build
 

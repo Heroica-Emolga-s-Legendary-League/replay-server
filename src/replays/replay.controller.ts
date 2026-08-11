@@ -9,8 +9,12 @@ export class ReplayController {
     @Post()
     @HttpCode(HttpStatus.CREATED)
     async createReplay(@Body() newReplay: NewReplayDto) {
-        const replay = await this.replayService.createReplay(newReplay);
-        return { id: replay.id, path_name: replay.path_name };
+        const result = await this.replayService.createReplay(newReplay);
+        return {
+            id: result.replay.id,
+            path_name: result.replay.path_name,
+            created: result.created,
+        };
     }
 
     @Get(':id.log')

@@ -1,12 +1,22 @@
 import { Injectable } from '@nestjs/common';
 import { NewReplayDto } from './dto/new-replay.dto';
+import { replayFingerprint } from './replay-fingerprint';
 import { ReplayStore } from './replay.store';
+
+export interface CreateReplayResult {
+  replay: NewReplayDto;
+  created: boolean;
+}
 
 @Injectable()
 export class ReplayService {
   constructor(private readonly replayStore: ReplayStore) {}
 
-  async createReplay(newReplay: NewReplayDto): Promise<NewReplayDto> {
+  async createReplay(newReplay: NewReplayDto): Promise<CreateReplayResult> {
+    const fingerprint = replayFingerprint(newReplay);
+    const existing = await this.replayStore.findByFingerprint(fingerprint);
+    if (existing) return { replay: existing, created: false };
+
     const originalId = newReplay.id;
     let candidateId = originalId;
 
@@ -17,25 +27,21 @@ export class ReplayService {
         path_name:
           newReplay.path_name === originalId ? candidateId : newReplay.path_name,
       };
+      const insertResult = await this.replayStore.tryInsert(candidate, fingerprint);
 
-      if (await this.replayStore.insert(candidate)) {
-        return candidate;
+      if (insertResult === 'created') {
+        return { replay: candidate, created: true };
       }
-
-      const existing = await this.replayStore.findById(candidateId);
-      if (existing && this.samePlayers(existing.players, candidate.players)) {
-        return existing;
+      if (insertResult === 'fingerprint-conflict') {
+        const concurrentlyCreated =
+          await this.replayStore.findByFingerprint(fingerprint);
+        if (concurrentlyCreated) {
+          return { replay: concurrentlyCreated, created: false };
+        }
       }
 
       candidateId = this.nextId(originalId, attempt + 1);
     }
-  }
-
-  private samePlayers(existing: string[], requested: string[]): boolean {
-    return (
-      existing.length === requested.length &&
-      existing.every((player, index) => player === requested[index])
-    );
   }
 
   private nextId(originalId: string, offset: number): string {

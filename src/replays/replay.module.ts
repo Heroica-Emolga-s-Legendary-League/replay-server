@@ -7,6 +7,6 @@ import { ReplayMigrationService } from './replay-migration.service';
 @Module({
     controllers: [ReplayController],
     providers: [ReplayService, ReplayStore, ReplayMigrationService],
-    exports: [ReplayMigrationService],
+    exports: [ReplayMigrationService, ReplayStore],
 })
 export class ReplayModule {}
