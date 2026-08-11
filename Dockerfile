@@ -17,8 +17,7 @@ RUN npm ci --omit=dev
 
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/views ./views
-COPY --from=builder /app/data ./data
-RUN mkdir -p /app/data/replays && chmod -R 775 /app/data
+RUN mkdir -p /app/data/replays /app/data/replays-migrated && chmod -R 775 /app/data
 
 EXPOSE 3000
 

@@ -70,6 +70,10 @@ This repository is ready for **Dockerfile-based deployment** in Coolify.
 - `MONGODB_DATABASE=replay-server` (optional)
 - `MONGODB_REPLAYS_COLLECTION=replays` (optional)
 
+MongoDB settings are runtime variables and are not needed to compile the image.
+In Coolify, keep `MONGODB_URI` secret and **disable Available at Buildtime** so the
+connection string is not injected into Docker build arguments or build metadata.
+
 ### 4) Migrate replay data
 
 Point the service at MongoDB, deploy it, then run `npm run migrate:replays` once
