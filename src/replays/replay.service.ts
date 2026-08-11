@@ -1,47 +1,51 @@
-import { Injectable } from "@nestjs/common";
-import { NewReplayDto } from "./dto/new-replay.dto";
-import fs from 'fs';
-import path from "path";
+import { Injectable } from '@nestjs/common';
+import { NewReplayDto } from './dto/new-replay.dto';
+import { ReplayStore } from './replay.store';
 
 @Injectable()
 export class ReplayService {
-    private readonly replayDirPath = path.resolve(process.cwd(), 'data', 'replays');
+  constructor(private readonly replayStore: ReplayStore) {}
 
-    constructor() {}
+  async createReplay(newReplay: NewReplayDto): Promise<NewReplayDto> {
+    const originalId = newReplay.id;
+    let candidateId = originalId;
 
-    async createReplay(newReplay: NewReplayDto) {
-        await fs.promises.mkdir(this.replayDirPath, { recursive: true });
-        await fs.promises.writeFile(path.join(this.replayDirPath, `${newReplay.id}.json`), JSON.stringify(newReplay), { flag: 'w' });
+    for (let attempt = 0; ; attempt++) {
+      const candidate: NewReplayDto = {
+        ...newReplay,
+        id: candidateId,
+        path_name:
+          newReplay.path_name === originalId ? candidateId : newReplay.path_name,
+      };
+
+      if (await this.replayStore.insert(candidate)) {
+        return candidate;
+      }
+
+      candidateId = this.nextId(originalId, attempt + 1);
     }
+  }
 
-    async getReplay(id: string): Promise<NewReplayDto | null> {
-        try {
-            const data = await fs.promises.readFile(path.join(this.replayDirPath, `${id}.json`), 'utf-8');
-            return JSON.parse(data);
-        } catch (error) {
-            return null;
-        }
-    }
+  private nextId(originalId: string, offset: number): string {
+    const match = originalId.match(/^(.*?)(\d+)$/);
+    if (!match) return `${originalId}-${offset}`;
 
-    async getReplayLog(id: string): Promise<string | null> {
-        try {
-            const data = await fs.promises.readFile(path.join(this.replayDirPath, `${id}.json`), 'utf-8');
-            const json = JSON.parse(data);
-            return json.log || "REPLAY NOT FOUND";
-        } catch (error) {
-            return null;
-        }
-    }
+    const prefix = match[1];
+    const number = Number(match[2]);
+    if (!Number.isSafeInteger(number + offset)) return `${originalId}-${offset}`;
+    return `${prefix}${number + offset}`;
+  }
 
-    async getReplays() {
-        const files = await fs.promises.readdir(this.replayDirPath);
-        const replays: NewReplayDto[] = [];
+  async getReplay(id: string): Promise<NewReplayDto | null> {
+    return this.replayStore.findById(id);
+  }
 
-        for (const file of files) {
-            const data = await fs.promises.readFile(path.join(this.replayDirPath, file), 'utf-8');
-            replays.push(JSON.parse(data));
-        }
+  async getReplayLog(id: string): Promise<string | null> {
+    const replay = await this.replayStore.findById(id);
+    return replay?.log ?? null;
+  }
 
-        return replays;
-    }
+  async getReplays(): Promise<NewReplayDto[]> {
+    return this.replayStore.findAll();
+  }
 }

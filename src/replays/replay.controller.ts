@@ -1,4 +1,4 @@
-import { Body, Controller, Get, NotFoundException, Param, Post, Render } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, HttpStatus, NotFoundException, Param, Post, Render } from "@nestjs/common";
 import { NewReplayDto } from "./dto/new-replay.dto";
 import { ReplayService } from "./replay.service";
 
@@ -7,8 +7,10 @@ export class ReplayController {
     constructor(private readonly replayService: ReplayService) {}
 
     @Post()
+    @HttpCode(HttpStatus.CREATED)
     async createReplay(@Body() newReplay: NewReplayDto) {
-        await this.replayService.createReplay(newReplay);
+        const replay = await this.replayService.createReplay(newReplay);
+        return { id: replay.id, path_name: replay.path_name };
     }
 
     @Get(':id.log')

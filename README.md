@@ -1,15 +1,43 @@
 # Replay Server
 
-NestJS service for ingesting and serving replay JSON files from `data/replays`.
+NestJS service for ingesting and serving replays from MongoDB.
 
 ## Local Development
 
 ```bash
 npm install
+npm run build
+npm run migrate:replays
 npm run start:dev
 ```
 
 App listens on `PORT` (default `3000`).
+
+Set `MONGODB_URI` before starting the app. `MONGODB_DATABASE` defaults to
+`replay-server`, and `MONGODB_REPLAYS_COLLECTION` defaults to `replays`.
+
+## Migrating existing replay files
+
+After building, run `npm run migrate:replays`. It imports every JSON file in
+`data/replays` with insert-only writes. Imported files are copied and byte-verified
+in `data/replays-migrated` before the originals are removed.
+
+The migration is safe to run repeatedly:
+
+- An identical replay already in MongoDB is archived without writing to MongoDB.
+- A different replay with the same ID is reported as a conflict; neither copy is changed.
+- Existing archive files are never overwritten. A byte-identical archive permits
+  resuming an interrupted migration; a different archive stops the operation.
+- Invalid JSON files remain in `data/replays` and cause a non-zero exit code.
+
+## Replay ID collisions
+
+`POST /replays` first attempts the submitted `id`. If that ID already exists, the
+server increments its numeric suffix until an insert succeeds (for example,
+`battle-12`, `battle-13`, `battle-14`). MongoDB's unique `_id` constraint makes
+this safe even when uploads arrive concurrently. The response contains the final
+saved `id` and `path_name`; callers must use that returned ID when constructing
+the replay URL.
 
 ## Production Build
 
@@ -38,17 +66,15 @@ This repository is ready for **Dockerfile-based deployment** in Coolify.
 
 - `PORT=3000` (or any port, if your Coolify setup requires a custom internal port)
 - `NODE_ENV=production`
+- `MONGODB_URI=mongodb://...` (store credentials as a secret)
+- `MONGODB_DATABASE=replay-server` (optional)
+- `MONGODB_REPLAYS_COLLECTION=replays` (optional)
 
-### 4) Persist replay data
+### 4) Migrate replay data
 
-Replay files are written to `/app/data/replays` inside the container.
-
-Add a persistent volume in Coolify:
-
-- **Container path:** `/app/data/replays`
-- **Host path / managed volume:** any persistent location/volume managed by Coolify
-
-Without this volume, replay files are lost on redeploy.
+Point the service at MongoDB, deploy it, then run `npm run migrate:replays` once
+inside the application container. Keep a volume mounted at `/app/data` until the
+migration completes and its result has no conflicts or invalid files.
 
 ### 5) Deploy
 
@@ -57,7 +83,5 @@ Trigger deployment from Coolify. Health check is built into the image and checks
 ## Notes
 
 - Views are served from `/app/views` in production image.
-- Existing seeded data in `data/replays` is copied into the image at build time.
-- Container ensures `/app/data/replays` exists and is writable at startup image build time.
-- For host bind mounts, ensure the host directory mapped to `/app/data/replays` is writable by the container.
+- Existing seeded data in `data/replays` is copied into the image for migration.
 - Do not commit secrets; use Coolify environment variables for sensitive values.
