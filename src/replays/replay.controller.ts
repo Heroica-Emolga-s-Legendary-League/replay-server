@@ -14,6 +14,7 @@ export class ReplayController {
             id: result.replay.id,
             path_name: result.replay.path_name,
             created: result.created,
+            queued: result.queued,
         };
     }
 

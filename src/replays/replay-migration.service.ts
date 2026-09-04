@@ -23,6 +23,24 @@ export class ReplayMigrationService {
 
   constructor(private readonly replayStore: ReplayStore) {}
 
+  // Persists a replay to the same directory `migrate()` reads from, for use when MongoDB is unreachable.
+  async enqueue(replay: NewReplayDto): Promise<void> {
+    await fs.mkdir(this.sourceDir, { recursive: true });
+    const contents = JSON.stringify(replay, null, 2);
+    try {
+      await fs.writeFile(path.join(this.sourceDir, `${replay.id}.json`), contents, {
+        flag: 'wx',
+      });
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error;
+      await fs.writeFile(
+        path.join(this.sourceDir, `${replay.id}-${Date.now()}.json`),
+        contents,
+        { flag: 'wx' },
+      );
+    }
+  }
+
   async migrate(): Promise<MigrationResult> {
     const result: MigrationResult = {
       imported: 0,

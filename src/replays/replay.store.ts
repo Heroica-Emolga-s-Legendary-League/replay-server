@@ -3,9 +3,20 @@ import {
   OnApplicationShutdown,
   ServiceUnavailableException,
 } from '@nestjs/common';
-import { Collection, MongoClient, MongoServerError } from 'mongodb';
+import {
+  Collection,
+  MongoClient,
+  MongoNetworkError,
+  MongoServerError,
+  MongoServerSelectionError,
+} from 'mongodb';
 import { NewReplayDto } from './dto/new-replay.dto';
 import { replayFingerprint } from './replay-fingerprint';
+
+// Distinguishes "can't reach MongoDB" (e.g. an Atlas outage) from server-side rejections like duplicate keys.
+export function isMongoConnectivityError(error: unknown): boolean {
+  return error instanceof MongoServerSelectionError || error instanceof MongoNetworkError;
+}
 
 type ReplayDocument = NewReplayDto & {
   _id: string;

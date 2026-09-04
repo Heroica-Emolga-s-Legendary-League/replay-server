@@ -1,21 +1,37 @@
 import { Injectable } from '@nestjs/common';
 import { NewReplayDto } from './dto/new-replay.dto';
 import { replayFingerprint } from './replay-fingerprint';
-import { ReplayStore } from './replay.store';
+import { ReplayMigrationService } from './replay-migration.service';
+import { isMongoConnectivityError, ReplayStore } from './replay.store';
 
 export interface CreateReplayResult {
   replay: NewReplayDto;
   created: boolean;
+  queued: boolean;
 }
 
 @Injectable()
 export class ReplayService {
-  constructor(private readonly replayStore: ReplayStore) {}
+  constructor(
+    private readonly replayStore: ReplayStore,
+    private readonly replayMigrationService: ReplayMigrationService,
+  ) {}
 
   async createReplay(newReplay: NewReplayDto): Promise<CreateReplayResult> {
+    try {
+      return await this.insertReplay(newReplay);
+    } catch (error) {
+      if (!isMongoConnectivityError(error)) throw error;
+      // MongoDB is unreachable; queue to disk so it can be imported once it's back (see migrate-replays.ts).
+      await this.replayMigrationService.enqueue(newReplay);
+      return { replay: newReplay, created: false, queued: true };
+    }
+  }
+
+  private async insertReplay(newReplay: NewReplayDto): Promise<CreateReplayResult> {
     const fingerprint = replayFingerprint(newReplay);
     const existing = await this.replayStore.findByFingerprint(fingerprint);
-    if (existing) return { replay: existing, created: false };
+    if (existing) return { replay: existing, created: false, queued: false };
 
     const originalId = newReplay.id;
     let candidateId = originalId;
@@ -30,13 +46,13 @@ export class ReplayService {
       const insertResult = await this.replayStore.tryInsert(candidate, fingerprint);
 
       if (insertResult === 'created') {
-        return { replay: candidate, created: true };
+        return { replay: candidate, created: true, queued: false };
       }
       if (insertResult === 'fingerprint-conflict') {
         const concurrentlyCreated =
           await this.replayStore.findByFingerprint(fingerprint);
         if (concurrentlyCreated) {
-          return { replay: concurrentlyCreated, created: false };
+          return { replay: concurrentlyCreated, created: false, queued: false };
         }
       }
 

@@ -1,4 +1,6 @@
+import { MongoServerSelectionError } from 'mongodb';
 import { NewReplayDto } from './dto/new-replay.dto';
+import { ReplayMigrationService } from './replay-migration.service';
 import { ReplayService } from './replay.service';
 import { ReplayStore } from './replay.store';
 
@@ -18,14 +20,24 @@ function mockStore(overrides: Partial<ReplayStore> = {}): ReplayStore {
   } as unknown as ReplayStore;
 }
 
+function mockMigrationService(
+  overrides: Partial<ReplayMigrationService> = {},
+): ReplayMigrationService {
+  return {
+    enqueue: jest.fn().mockResolvedValue(undefined),
+    ...overrides,
+  } as unknown as ReplayMigrationService;
+}
+
 describe('ReplayService', () => {
   it('saves new replay content under the requested ID', async () => {
     const store = mockStore();
-    const service = new ReplayService(store);
+    const service = new ReplayService(store, mockMigrationService());
 
     await expect(service.createReplay(replay)).resolves.toEqual({
       replay,
       created: true,
+      queued: false,
     });
     expect(store.tryInsert).toHaveBeenCalledWith(replay, expect.stringMatching(/^[a-f0-9]{64}$/));
   });
@@ -35,11 +47,12 @@ describe('ReplayService', () => {
     const store = mockStore({
       findByFingerprint: jest.fn().mockResolvedValue(existing),
     });
-    const service = new ReplayService(store);
+    const service = new ReplayService(store, mockMigrationService());
 
     await expect(service.createReplay(replay)).resolves.toEqual({
       replay: existing,
       created: false,
+      queued: false,
     });
     expect(store.tryInsert).not.toHaveBeenCalled();
   });
@@ -49,11 +62,12 @@ describe('ReplayService', () => {
       .fn()
       .mockResolvedValueOnce('id-conflict')
       .mockResolvedValueOnce('created');
-    const service = new ReplayService(mockStore({ tryInsert }));
+    const service = new ReplayService(mockStore({ tryInsert }), mockMigrationService());
 
     await expect(service.createReplay(replay)).resolves.toEqual({
       replay: { ...replay, id: 'gen9-test-2', path_name: 'gen9-test-2' },
       created: true,
+      queued: false,
     });
     expect(tryInsert.mock.calls.map(([value]) => value.id)).toEqual([
       'gen9-test-1',
@@ -72,17 +86,19 @@ describe('ReplayService', () => {
         findByFingerprint,
         tryInsert: jest.fn().mockResolvedValue('fingerprint-conflict'),
       }),
+      mockMigrationService(),
     );
 
     await expect(service.createReplay(replay)).resolves.toEqual({
       replay: existing,
       created: false,
+      queued: false,
     });
   });
 
   it('does not consider the same players with a different log a duplicate', async () => {
     const store = mockStore();
-    const service = new ReplayService(store);
+    const service = new ReplayService(store, mockMigrationService());
 
     await service.createReplay(replay);
     await service.createReplay({ ...replay, log: 'a different battle log' });
@@ -91,5 +107,22 @@ describe('ReplayService', () => {
       ([, fingerprint]) => fingerprint,
     );
     expect(fingerprints[0]).not.toEqual(fingerprints[1]);
+  });
+
+  it('queues the replay to disk when MongoDB is unreachable', async () => {
+    const store = mockStore({
+      findByFingerprint: jest
+        .fn()
+        .mockRejectedValue(new MongoServerSelectionError('no primary', {} as never)),
+    });
+    const migrationService = mockMigrationService();
+    const service = new ReplayService(store, migrationService);
+
+    await expect(service.createReplay(replay)).resolves.toEqual({
+      replay,
+      created: false,
+      queued: true,
+    });
+    expect(migrationService.enqueue).toHaveBeenCalledWith(replay);
   });
 });
